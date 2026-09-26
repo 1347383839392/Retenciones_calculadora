@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Retenciones</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=JetBrains+Mono:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-a:#0F2027; --bg-b:#12343B;
+    --paper:#FBFAF7; --ink:#152524;
+    --teal:#0E7C66; --teal-dk:#0A5C4C; --teal-soft:#E4F3EE;
+    --amber:#D98E2A; --amber-dk:#A9660F; --amber-soft:#FBF0DD;
+    --sky:#2E7EA6; --sky-dk:#1E5F80; --sky-soft:#E4F1F7;
+    --line:#E4DFD3;
+    color-scheme: light;
+  }
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(1100px 500px at 15% -10%, rgba(46,126,166,.25), transparent 60%),
+      radial-gradient(1000px 480px at 100% 0%, rgba(217,142,42,.18), transparent 55%),
+      linear-gradient(180deg, var(--bg-a), var(--bg-b) 260px, var(--paper) 260px);
+    color:var(--ink);
+    font-family:'Manrope',sans-serif;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    min-height:100%;
+  }
+  .masthead{ padding:2.4rem 0 2rem; }
+  .masthead .eyebrow{
+    color:rgba(255,255,255,.65); font-size:.85rem; letter-spacing:.02em;
+  }
+  .masthead h1{
+    font-family:'Fraunces',serif; font-weight:700; color:#fff;
+    font-size:2.3rem; letter-spacing:-0.01em; margin:.2rem 0 0;
+  }
+  .masthead p{margin:.5rem 0 0; color:rgba(255,255,255,.72); font-size:1rem;}
+  .ledger{ max-width:960px; }
+
+  .card-calc{
+    background:#fff; border:1px solid var(--line); border-radius:16px;
+    box-shadow:0 18px 34px -22px rgba(15,32,39,.35);
+    height:100%; overflow:hidden;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .card-calc:hover{ transform:translateY(-3px); box-shadow:0 22px 40px -20px rgba(15,32,39,.4); }
+
+  .card-calc .head{ padding:1.15rem 1.25rem 1rem; border-bottom:1px solid var(--line); }
+  .card-calc .head .pct{
+    font-family:'JetBrains Mono',monospace; font-weight:600;
+    font-size:1.7rem; color:var(--teal-dk);
+  }
+  .card-calc .head .label{ font-size:.88rem; color:#6B6B62; margin-top:.15rem; }
+
+  .card-calc.isr5 .head .pct{ color:var(--sky-dk); }
+  .card-calc.isr7 .head .pct{ color:var(--amber-dk); }
+
+  .card-calc .body{ padding:1.15rem 1.25rem 1.3rem; }
+  .form-label{ font-size:.82rem; color:#6B6B62; margin-bottom:.35rem; }
+  .form-control{
+    border-radius:10px; border-color:var(--line); font-family:'JetBrains Mono',monospace;
+    font-size:1.05rem; padding:.55rem .75rem;
+  }
+  .form-control:focus{ border-color:var(--teal); box-shadow:0 0 0 .2rem rgba(14,124,102,.14); }
+  .isr5 .form-control:focus{ border-color:var(--sky); box-shadow:0 0 0 .2rem rgba(46,126,166,.14); }
+  .isr7 .form-control:focus{ border-color:var(--amber); box-shadow:0 0 0 .2rem rgba(217,142,42,.16); }
+
+  .row-line{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:.5rem 0; border-bottom:1px dashed var(--line); font-size:.94rem;
+  }
+  .row-line:last-child{ border-bottom:none; }
+  .row-line .v{ font-family:'JetBrains Mono',monospace; font-weight:500; }
+
+  .row-line.final{
+    margin-top:.5rem; padding:.75rem .85rem; border:none; border-radius:10px;
+    background:var(--teal-soft);
+  }
+  .isr5 .row-line.final{ background:var(--sky-soft); }
+  .isr7 .row-line.final{ background:var(--amber-soft); }
+  .row-line.final .k{ font-weight:600; }
+  .row-line.final .v{ font-size:1.25rem; font-weight:700; color:var(--teal-dk); }
+  .isr5 .row-line.final .v{ color:var(--sky-dk); }
+  .isr7 .row-line.final .v{ color:var(--amber-dk); }
+
+  .note{ font-size:.79rem; color:#8A8577; margin-top:.7rem; }
+  footer{ font-size:.82rem; color:#6B6B62; padding:1.75rem 0 2.5rem; }
+
+  .summary{
+    background:#152524; border-radius:16px; padding:1.4rem 1.5rem;
+    box-shadow:0 18px 34px -22px rgba(15,32,39,.5);
+  }
+  .summary .stat-label{ color:rgba(255,255,255,.6); font-size:.85rem; }
+  .summary .stat-value{
+    font-family:'JetBrains Mono',monospace; font-weight:700; color:#fff;
+    font-size:2rem; margin-top:.1rem;
+  }
+  .summary .stat-value.sub{ color:var(--amber); font-size:1.5rem; }
+  .summary hr{ border-color:rgba(255,255,255,.15); margin:1rem 0; }
+  .btn-clear{
+    border:1px solid rgba(255,255,255,.3); color:#fff; background:transparent;
+    border-radius:10px; font-size:.85rem; padding:.5rem 1rem;
+  }
+  .btn-clear:hover{ background:rgba(255,255,255,.1); color:#fff; }
+</style>
+</head>
+<body>
+<div class="container ledger py-4">
+
+  <div class="masthead">
+    <h1>Cálculo de retenciones</h1>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="summary d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <div class="stat-label">TOTAL IMPUESTO (Retención IVA + Retención ISR)</div>
+          <div class="stat-value" id="total-impuesto">Q 0.00</div>
+          <div class="stat-label mt-3">Total a pagar (factura &minus; impuestos)</div>
+          <div class="stat-value" id="total-pagar" style="color:#7FD8B0;">Q 0.00</div>
+        </div>
+        <button type="button" class="btn-clear" id="btn-borrar">Borrar datos</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-2" id="cards">
+
+    <div class="col-12 col-md-4">
+      <div class="card-calc" id="card-iva">
+        <div class="head">
+          <div class="pct">12% / 15%</div>
+          <div class="label">IVA y su retención</div>
+        </div>
+        <div class="body">
+          <label class="form-label" for="iva-total">Total de facturación (Q)</label>
+          <input type="number" class="form-control" id="iva-total" value="37912.55" step="0.01" min="0">
+          <div class="mt-3">
+            <div class="row-line"><span class="k">Base</span><span class="v" id="iva-base">Q 0.00</span></div>
+            <div class="row-line"><span class="k">IVA 12%</span><span class="v" id="iva-iva">Q 0.00</span></div>
+            <div class="row-line final"><span class="k">Retención IVA 15%</span><span class="v" id="iva-ret">Q 0.00</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-calc isr5" id="card-isr5">
+        <div class="head">
+          <div class="pct">5%</div>
+          <div class="label">Retención ISR</div>
+        </div>
+        <div class="body">
+          <label class="form-label" for="isr5-total">Total de facturación (Q)</label>
+          <input type="number" class="form-control" id="isr5-total" value="0" step="0.01" min="0">
+          <div class="mt-3">
+            <div class="row-line"><span class="k">Base</span><span class="v" id="isr5-base">Q 0.00</span></div>
+            <div class="row-line final"><span class="k">Retención ISR 5%</span><span class="v" id="isr5-ret">Q 0.00</span></div>
+          </div>
+          <p class="note">Servicios sin relación de dependencia, factura &le; Q30,000.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-calc isr7" id="card-isr7">
+        <div class="head">
+          <div class="pct">5% + 7%</div>
+          <div class="label">ISR por tramos &gt; Q30,000</div>
+        </div>
+        <div class="body">
+          <label class="form-label" for="isr7-total">Total de facturación (Q)</label>
+          <input type="number" class="form-control" id="isr7-total" value="49270.05" step="0.01" min="0">
+          <div class="mt-3">
+            <div class="row-line"><span class="k">Base (total &divide; 1.12)</span><span class="v" id="isr7-base">Q 0.00</span></div>
+            <div class="row-line"><span class="k">Tramo 1 (primeros Q30,000 &times; 5%)</span><span class="v" id="isr7-t1">Q 0.00</span></div>
+            <div class="row-line"><span class="k">Excedente</span><span class="v" id="isr7-exc">Q 0.00</span></div>
+            <div class="row-line"><span class="k">Tramo 2 (excedente &times; 7%)</span><span class="v" id="isr7-t2">Q 0.00</span></div>
+            <div class="row-line final"><span class="k">Total ISR</span><span class="v" id="isr7-ret">Q 0.00</span></div>
+          </div>
+          <p class="note">5% sobre los primeros Q30,000 y 7% sobre el excedente.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pb-4"></div>
+</div>
+
+<script>
+function fmt(n){
+  return 'Q ' + n.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+let retIva = 0, retIsr5 = 0, retIsr7 = 0;
+
+function actualizarTotal(){
+  const total = retIva + retIsr5 + retIsr7;
+  const facturaTotal = parseFloat(document.getElementById('iva-total').value) || 0;
+  document.getElementById('total-impuesto').textContent = fmt(total);
+  document.getElementById('total-pagar').textContent = fmt(facturaTotal - total);
+}
+
+function wire(prefix, retPct){
+  const input = document.getElementById(prefix+'-total');
+  const base = document.getElementById(prefix+'-base');
+  const ret = document.getElementById(prefix+'-ret');
+  const ivaOut = document.getElementById(prefix+'-iva'); // only exists for iva card
+  function calc(){
+    const total = parseFloat(input.value) || 0;
+    const b = total / 1.12;
+    base.textContent = fmt(b);
+    let retencion;
+    if(ivaOut){
+      const iva = b * 0.12;
+      ivaOut.textContent = fmt(iva);
+      retencion = iva * 0.15;
+    } else {
+      retencion = b * retPct;
+    }
+    ret.textContent = fmt(retencion);
+    if(prefix === 'iva') retIva = retencion;
+    if(prefix === 'isr5') retIsr5 = retencion;
+    actualizarTotal();
+  }
+  input.addEventListener('input', calc);
+  calc();
+}
+wire('iva', null);
+wire('isr5', 0.05);
+
+// ISR por tramos: 5% sobre los primeros Q30,000, 7% sobre el excedente (aplicados sobre la base)
+function wireTramos(){
+  const input = document.getElementById('isr7-total');
+  const baseEl = document.getElementById('isr7-base');
+  const t1 = document.getElementById('isr7-t1');
+  const exc = document.getElementById('isr7-exc');
+  const t2 = document.getElementById('isr7-t2');
+  const ret = document.getElementById('isr7-ret');
+  const LIMITE = 30000;
+  function calc(){
+    const total = parseFloat(input.value) || 0;
+    const base = total / 1.12;
+    const tramo1Base = Math.min(base, LIMITE);
+    const tramo1 = tramo1Base * 0.05;
+    const excedente = Math.max(base - LIMITE, 0);
+    const tramo2 = excedente * 0.07;
+    baseEl.textContent = fmt(base);
+    t1.textContent = fmt(tramo1);
+    exc.textContent = fmt(excedente);
+    t2.textContent = fmt(tramo2);
+    retIsr7 = tramo1 + tramo2;
+    ret.textContent = fmt(retIsr7);
+    actualizarTotal();
+  }
+  input.addEventListener('input', calc);
+  calc();
+}
+wireTramos();
+
+document.getElementById('btn-borrar').addEventListener('click', function(){
+  ['iva-total','isr5-total','isr7-total'].forEach(function(id){
+    const el = document.getElementById(id);
+    el.value = 0;
+    el.dispatchEvent(new Event('input'));
+  });
+});
+
+// ISR 5% e ISR por tramos son excluyentes: una factura solo puede llevar una de las dos.
+// Si el usuario escribe un valor distinto de 0 en una, la otra se limpia automáticamente.
+const isr5Input = document.getElementById('isr5-total');
+const isr7Input = document.getElementById('isr7-total');
+
+isr5Input.addEventListener('input', function(){
+  const v = parseFloat(isr5Input.value) || 0;
+  if(v !== 0 && parseFloat(isr7Input.value) !== 0){
+    isr7Input.value = 0;
+    isr7Input.dispatchEvent(new Event('input'));
+  }
+});
+
+isr7Input.addEventListener('input', function(){
+  const v = parseFloat(isr7Input.value) || 0;
+  if(v !== 0 && parseFloat(isr5Input.value) !== 0){
+    isr5Input.value = 0;
+    isr5Input.dispatchEvent(new Event('input'));
+  }
+});
+</script>
+</body>
+</html>
